@@ -32,7 +32,7 @@ class Secrets:
 app = Flask(__name__)
 
 
-@app.route('/')
-def hello_world():
+@app.route('/<abbr>')
+def fetch_stock(abbr: str):
     ts = TimeSeries(key=Secrets.instance().alpha_vantage_key)
-    return ts.get_intraday('GOOGL')[0]
+    return ts.get_intraday(abbr)[0]

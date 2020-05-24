@@ -35,6 +35,12 @@ resource "google_service_account" "runner" {
   depends_on = [google_project_service.iam]
 }
 
+resource "google_service_account" "cron" {
+  account_id = "${var.app_name}-cron"
+
+  depends_on = [google_project_service.iam]
+}
+
 resource "google_cloud_run_service" "app" {
   name     = var.app_name
   location = "us-central1"
@@ -57,32 +63,37 @@ resource "google_cloud_run_service" "app" {
   }
 }
 
-data "google_iam_policy" "noauth" {
-  binding {
-    role = "roles/run.invoker"
-    members = [
-      "allUsers",
-    ]
-  }
-}
-
-resource "google_cloud_run_service_iam_policy" "noauth" {
+resource "google_cloud_run_service_iam_binding" "binding" {
   location    = google_cloud_run_service.app.location
   project     = google_cloud_run_service.app.project
   service     = google_cloud_run_service.app.name
+  role        = "roles/run.invoker"
+  members     = [
+    "serviceAccount:${google_service_account.cron.email}",
+  ]
+}
 
-  policy_data = data.google_iam_policy.noauth.policy_data
+data "google_secret_manager_secret_version" "secrets" {
+  provider = google-beta
+  secret   = "${var.app_name}-terraform"
 }
 
 resource "google_cloud_scheduler_job" "job" {
-  name             = "test-job"
-  region           = "us-central1"
-  schedule         = "*/20 * * * *"
-  time_zone        = "America/New_York"
+  for_each  = yamldecode(
+    data.google_secret_manager_secret_version.secrets.secret_data
+  ).cron
+  name      = each.key
+  region    = "us-central1"
+  schedule  = each.value
+  time_zone = "America/New_York"
 
   http_target {
     http_method = "GET"
-    uri         = google_cloud_run_service.app.status[0].url
+    uri         = "${google_cloud_run_service.app.status[0].url}/${each.key}"
+
+    oidc_token {
+      service_account_email = google_service_account.cron.email
+    }
   }
 }
 
