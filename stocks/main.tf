@@ -104,6 +104,63 @@ resource "google_secret_manager_secret_iam_binding" "access" {
   members   = ["serviceAccount:${google_service_account.runner.email}"]
 }
 
+resource "google_bigquery_dataset" "dataset" {
+  dataset_id = var.app_name
+
+  access {
+    role          = "roles/bigquery.dataOwner"
+    special_group = "projectOwners"
+  }
+  access {
+    role          = "roles/bigquery.dataViewer"
+    special_group = "projectReaders"
+  }
+  access {
+    role          = "roles/bigquery.dataEditor"
+    special_group = "projectWriters"
+  }
+  access {
+    role          = "roles/bigquery.dataEditor"
+    user_by_email = google_service_account.runner.email
+  }
+}
+
+resource "google_bigquery_table" "price" {
+  dataset_id = google_bigquery_dataset.dataset.dataset_id
+  table_id   = "price"
+  clustering = ["symbol", "date"]
+
+  time_partitioning {
+    field = "date"
+    type  = "DAY"
+  }
+
+  schema = <<EOF
+    [
+      {
+        "name": "date",
+        "type": "DATE",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "inserted_at",
+        "type": "TIMESTAMP",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "symbol",
+        "type": "STRING",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "avg_price",
+        "type": "NUMERIC",
+        "mode": "REQUIRED"
+      }
+    ]
+  EOF
+}
+
 output "service_url" {
   value = google_cloud_run_service.app.status[0].url
 }

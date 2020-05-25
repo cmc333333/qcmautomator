@@ -21,4 +21,5 @@ echo "gcp_project_id=\"$gcp_project_id\"" >> terraform.tfvars
 terraform init -input=false \
   -backend-config=bucket=qcmautomator_tfstate \
   -backend-config=prefix=$app_name
+terraform plan
 terraform apply -auto-approve
