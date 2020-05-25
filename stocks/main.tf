@@ -88,7 +88,7 @@ resource "google_cloud_scheduler_job" "job" {
   time_zone = "America/New_York"
 
   http_target {
-    http_method = "GET"
+    http_method = "POST"
     uri         = "${google_cloud_run_service.app.status[0].url}/${each.key}"
 
     oidc_token {
@@ -104,23 +104,28 @@ resource "google_secret_manager_secret_iam_binding" "access" {
   members   = ["serviceAccount:${google_service_account.runner.email}"]
 }
 
+resource "google_project_iam_member" "run_queries" {
+  role   = "roles/bigquery.jobUser"
+  member = "serviceAccount:${google_service_account.runner.email}"
+}
+
 resource "google_bigquery_dataset" "dataset" {
   dataset_id = var.app_name
 
   access {
-    role          = "roles/bigquery.dataOwner"
+    role          = "OWNER"
     special_group = "projectOwners"
   }
   access {
-    role          = "roles/bigquery.dataViewer"
+    role          = "READER"
     special_group = "projectReaders"
   }
   access {
-    role          = "roles/bigquery.dataEditor"
+    role          = "WRITER"
     special_group = "projectWriters"
   }
   access {
-    role          = "roles/bigquery.dataEditor"
+    role          = "WRITER"
     user_by_email = google_service_account.runner.email
   }
 }
@@ -128,23 +133,12 @@ resource "google_bigquery_dataset" "dataset" {
 resource "google_bigquery_table" "price" {
   dataset_id = google_bigquery_dataset.dataset.dataset_id
   table_id   = "price"
-  clustering = ["symbol", "date"]
-
-  time_partitioning {
-    field = "date"
-    type  = "DAY"
-  }
 
   schema = <<EOF
     [
       {
         "name": "date",
         "type": "DATE",
-        "mode": "REQUIRED"
-      },
-      {
-        "name": "inserted_at",
-        "type": "TIMESTAMP",
         "mode": "REQUIRED"
       },
       {

@@ -12,6 +12,7 @@ alpha-vantage = "~=2.2.0"
 google-cloud-secret-manager = "~=1.0.0"
 pyyaml = "~=5.3.1"
 google-cloud-bigquery = "~=1.24.0"
+pendulum = "~=2.1.0"
 
 [requires]
 python_version = "3.8"
