@@ -19,5 +19,6 @@ def fetch_stock(symbol: str):
         for date, indicator in indicators.items()
         if water_line < date < now
     }
-    datastore.append_data(symbol, indicators)
+    if indicators:
+        datastore.append_data(symbol, indicators)
     return "", 204
