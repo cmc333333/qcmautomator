@@ -49,11 +49,16 @@ resource "google_cloudbuild_trigger" "run" {
     step {
       name = "gcr.io/${var.gcp_project_id}/${var.app_name}"
       args = [each.key]
+      env  = [
+        "GCP_PROJECT_ID=${var.gcp_project_id}",
+        "APP_NAME=${var.app_name}",
+        "GOOGLE_APPLICATION_CREDENTIALS=/workspace/creds.json"
+      ]
     }
     step {
       name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
-      args = ["-c", "gcloud service-accounts keys delete $${jq -r '.private_key_id' creds.json} --iam-account=${google_service_account.runner.email}"]
+      args = ["-c", "gcloud iam service-accounts keys delete $$(grep private_key_id creds.json | cut -f 4 -d '\"') --iam-account=${google_service_account.runner.email}"]
     }
   }
 }

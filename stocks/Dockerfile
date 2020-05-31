@@ -8,7 +8,6 @@ RUN pipenv install --ignore-pipfile --system
 
 COPY ["app.py", "datastore.py", "secrets_config.py", "./"]
 
-ENV PYTHONUNBUFFERED=1\
-    GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json
+ENV PYTHONUNBUFFERED=1
 
-ENTRYPOINT ["python", "app.py"]
+ENTRYPOINT ["python", "/app/app.py"]

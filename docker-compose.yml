@@ -5,6 +5,7 @@ services:
     environment:
       GCP_PROJECT_ID: qcmautomator
       APP_NAME: stocks
+      GOOGLE_APPLICATION_CREDENTIALS: /app/creds.json
     ports:
     - "8001:8080"
     volumes:
