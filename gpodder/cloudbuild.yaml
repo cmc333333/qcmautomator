@@ -1,5 +1,5 @@
 substitutions:
-  _APP_NAME: stocks
+  _APP_NAME: gpodder
 tags: [$_APP_NAME, "build"]
 
 steps:
