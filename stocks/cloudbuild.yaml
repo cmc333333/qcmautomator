@@ -6,8 +6,7 @@ steps:
   args:
   - --destination=gcr.io/$PROJECT_ID/$_APP_NAME
   - --cache=true
-
-# Deploy it
 - name: 'gcr.io/$PROJECT_ID/terraform'
-  entrypoint: './deploy.sh'
+  dir: infra
+  entrypoint: './apply-terraform.sh'
   args: [$PROJECT_ID, $_APP_NAME]

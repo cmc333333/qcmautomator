@@ -3,7 +3,6 @@ services:
   stocks:
     build: ./stocks
     environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /app/creds.json
       GCP_PROJECT_ID: qcmautomator
       APP_NAME: stocks
     ports:

@@ -8,6 +8,7 @@ RUN pipenv install --ignore-pipfile --system
 
 COPY ["app.py", "datastore.py", "secrets_config.py", "./"]
 
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1\
+    GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json
 
-CMD exec gunicorn --bind 0.0.0.0:8080 --workers 1 --threads 8 --timeout 0 app:app 
+ENTRYPOINT ["python", "app.py"]

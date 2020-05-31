@@ -2,7 +2,6 @@ import os
 from functools import lru_cache
 from typing import Dict, Optional, TypedDict
 
-import flask
 from google.cloud.bigquery import Client
 from google.cloud.bigquery.dataset import DatasetReference
 from google.cloud.bigquery.job import QueryJobConfig
@@ -43,4 +42,4 @@ def append_data(symbol: str, indicators: Dict[str, SMAIndicator]) -> None:
     table = ".".join([os.environ["GCP_PROJECT_ID"], os.environ["APP_NAME"], "price"])
     errors = bq_client().insert_rows_json(table, data, row_ids=row_ids)
     if errors:
-        flask.abort(flask.make_response(({"errors": errors}, 500)))
+        raise ValueError(errors)
