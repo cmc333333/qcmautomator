@@ -16,7 +16,7 @@ def fetch_episode_actions() -> None:
     hours = (time() - max_action) / 60 / 60
     logger.info(f"Fetching actions from the past {int(hours)} hours")
     response = client.download_episode_actions(
-        since=max_action, device_id=config.gpodder_device,
+        since=max_action + 1, device_id=config.gpodder_device,
     )
     if response.actions:
         datastore.append_actions(response.actions)
