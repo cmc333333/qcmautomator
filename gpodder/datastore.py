@@ -1,5 +1,5 @@
 import os
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 import sqlalchemy
 from google.cloud.bigquery import Client
@@ -7,7 +7,7 @@ from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from mygpoclient.api import EpisodeAction as GPOEpisodeAction
 from sqlalchemy import sql
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.orm.session import Session as SessionType
 
 _engine = sqlalchemy.create_engine(
@@ -46,6 +46,11 @@ class EpisodeAction(EpisodeActionBase, Base):
             total=action.total,
         )
 
+    def to_bq_dict(self) -> dict:
+        result = {col.name: getattr(self, col.name) for col in self.__table__.columns}
+        result["timestamp"] = self.timestamp.isoformat(sep=" ")
+        return result
+
 
 class EpisodeActionStage(EpisodeActionBase, Base):
     __tablename__ = "episode_actions_stage"
@@ -62,9 +67,41 @@ class PodcastBase:
 class Podcast(PodcastBase, Base):
     __tablename__ = "podcasts"
 
+    episodes = relationship("Episode", uselist=True)
+
+    def to_bq_dict(self) -> dict:
+        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
+
 
 class PodcastStage(PodcastBase, Base):
     __tablename__ = "podcasts_stage"
+
+
+class EpisodeBase:
+    episode = sqlalchemy.Column(sqlalchemy.String(), primary_key=True, nullable=False)
+    title = sqlalchemy.Column(sqlalchemy.String(), nullable=False)
+    description = sqlalchemy.Column(sqlalchemy.String())
+    released_at = sqlalchemy.Column(sqlalchemy.TIMESTAMP(timezone=True), nullable=False)
+    logo = sqlalchemy.Column(sqlalchemy.String())
+
+
+class Episode(EpisodeBase, Base):
+    __tablename__ = "episodes"
+    podcast = sqlalchemy.Column(
+        sqlalchemy.String(), sqlalchemy.ForeignKey("podcasts.podcast"), nullable=False
+    )
+
+    def to_bq_dict(self) -> dict:
+        result = {col.name: getattr(self, col.name) for col in self.__table__.columns}
+        result["released_at"] = self.released_at.isoformat(sep=" ")
+        return result
+
+
+class EpisodeStage(EpisodeBase, Base):
+    __tablename__ = "episodes_stage"
+    podcast = sqlalchemy.Column(
+        sqlalchemy.String(), sqlalchemy.ForeignKey("podcasts.podcast"), nullable=False
+    )
 
 
 def migrate_db():
@@ -89,19 +126,19 @@ def random_podcasts(session: SessionType, limit: int = 10) -> Iterable[str]:
         yield row[0]
 
 
-def merge_data(target_cls, data: Iterable[Base]) -> None:
+def merge_data(
+    target_cls, data: Iterable[Union[Episode, EpisodeAction, Podcast]]
+) -> None:
     """Generic function to merge a chunk of data into a target table, removing any
     duplicates."""
     client = Client()
     stage_bq = client.get_table(
         f"{os.environ['APP_NAME']}.{target_cls.__tablename__}_stage"
     )
+
     load_job = client.load_table_from_json(
         destination=stage_bq,
-        json_rows=[
-            {col.name: getattr(elt, col.name) for col in target_cls.__table__.columns}
-            for elt in data
-        ],
+        json_rows=[elt.to_bq_dict() for elt in data],
         job_config=LoadJobConfig(
             schema=stage_bq.schema, write_disposition="WRITE_TRUNCATE"
         ),

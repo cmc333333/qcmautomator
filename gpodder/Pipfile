@@ -13,6 +13,7 @@ mygpoclient = "~=1.8"
 url-normalize = "~=1.4.2"
 pybigquery = "~=0.4.15"
 feedparser = "~=5.2.1"
+pendulum = "~=2.1.0"
 
 [requires]
 python_version = "3.8"
