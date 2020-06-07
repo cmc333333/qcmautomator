@@ -28,14 +28,7 @@ episode_actions = sqlalchemy.Table(
 episode_actions_stage = sqlalchemy.Table(
     "episode_actions_stage",
     _meta,
-    sqlalchemy.Column("podcast", sqlalchemy.String(), nullable=False),
-    sqlalchemy.Column("episode", sqlalchemy.String(), nullable=False),
-    sqlalchemy.Column("action", sqlalchemy.String(), nullable=False),
-    sqlalchemy.Column("device", sqlalchemy.String(), nullable=False),
-    sqlalchemy.Column("timestamp", sqlalchemy.TIMESTAMP(timezone=True), nullable=False),
-    sqlalchemy.Column("started", sqlalchemy.Integer),
-    sqlalchemy.Column("position", sqlalchemy.Integer),
-    sqlalchemy.Column("total", sqlalchemy.Integer),
+    *(col.copy() for col in episode_actions.columns)
 )
 
 
@@ -49,7 +42,7 @@ def max_action() -> Optional[int]:
         row = conn.execute(
             sql.select([sql.func.max(episode_actions.c.timestamp).label("max_ts")])
         ).fetchone()
-        return int(row["max_ts"].timestamp()) if row else None
+        return int(row["max_ts"].timestamp()) if row["max_ts"] else None
 
 
 def append_actions(actions: Iterable[EpisodeAction]) -> None:
