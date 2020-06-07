@@ -12,6 +12,7 @@ google-cloud-bigquery = "~=1.24.0"
 mygpoclient = "~=1.8"
 url-normalize = "~=1.4.2"
 pybigquery = "~=0.4.15"
+feedparser = "~=5.2.1"
 
 [requires]
 python_version = "3.8"
