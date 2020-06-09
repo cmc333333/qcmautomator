@@ -1,6 +1,7 @@
 import os
 from typing import Iterable, Optional, Union
 
+import pendulum
 import sqlalchemy
 from google.cloud.bigquery import Client
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
@@ -40,7 +41,7 @@ class EpisodeAction(EpisodeActionBase, Base):
             episode=action.episode,
             action=action.action,
             device=action.device,
-            timestamp=action.timestamp,
+            timestamp=pendulum.parse(action.timestamp),
             started=action.started,
             position=action.position,
             total=action.total,
