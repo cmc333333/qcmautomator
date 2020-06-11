@@ -11,6 +11,10 @@ def parse_podcast(url: str) -> Optional[Podcast]:
     GPodder "Podcast"."""
     parsed = feedparser.parse(url)
     if parsed.feed and parsed.feed.get("title"):
+        entries = [
+            entry for entry in parsed.entries
+            if any(l.rel == "enclosure" for l in entry.links)
+        ]
         podcast = Podcast(
             podcast=url,
             title=parsed.feed.title,
@@ -27,7 +31,7 @@ def parse_podcast(url: str) -> Optional[Podcast]:
                 released_at=pendulum.parse(ep.published, strict=False),
                 logo=ep.image.href if "image" in ep else None,
             )
-            for ep in parsed.entries
+            for ep in entries
         ]
         return podcast
     return None
