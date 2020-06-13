@@ -13,7 +13,7 @@ def parse_podcast(url: str) -> Optional[Podcast]:
     if parsed.feed and parsed.feed.get("title"):
         entries = [
             entry for entry in parsed.entries
-            if any(l.rel == "enclosure" for l in entry.links)
+            if any(link.rel == "enclosure" for link in entry.links)
         ]
         podcast = Podcast(
             podcast=url,

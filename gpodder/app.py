@@ -46,6 +46,8 @@ def populate_podcasts(session: SessionType, podcast_urls: Iterable[str]) -> None
 
     datastore.merge_data(datastore.Podcast, podcasts)
     logger.info(f"Updated {len(podcasts)} podcasts")
+    for podcast in podcasts:
+        logger.info(f"Including {podcast.podcast}")
 
     datastore.merge_data(datastore.Episode, episodes)
     logger.info(f"Updated {len(episodes)} episodes")
