@@ -1,18 +1,12 @@
 version: "3.7"
 services:
-  gpodder:
-    build: ./gpodder
+  app:
+    build:
+      context: .
+      target: development
     environment:
-      GCP_PROJECT_ID: qcmautomator
-      APP_NAME: gpodder
-      GOOGLE_APPLICATION_CREDENTIALS: /app/creds.json
+      TF_VAR_gcp_billing_account: ${TF_VAR_gcp_billing_account}
+      TF_VAR_gcp_project_id: ${TF_VAR_gcp_project_id}
     volumes:
-    - "./gpodder:/app"
-  stocks:
-    build: ./stocks
-    environment:
-      GCP_PROJECT_ID: qcmautomator
-      APP_NAME: stocks
-      GOOGLE_APPLICATION_CREDENTIALS: /app/creds.json
-    volumes:
-    - "./stocks:/app"
+    - ".:/usr/src/app"
+    - "~/.config/gcloud:/root/.config/gcloud"

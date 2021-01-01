@@ -1,0 +1,42 @@
+tags: ["books"]
+
+options:
+  volumes:
+  - name: secrets
+    path: /etc/app/
+
+steps:
+- id: get-secret
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  args:
+  - gsutil
+  - --impersonate-service-account
+  - books-executor@${PROJECT_ID}.iam.gserviceaccount.com
+  - cp
+  - gs://${PROJECT_ID}-books-secrets/books.bin
+  - /etc/app/books.bin
+- id: decrypt-secret
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  args:
+  - gcloud
+  - kms
+  - decrypt
+  - --location
+  - us
+  - --keyring
+  - books
+  - --key
+  - secrets
+  - --plaintext-file
+  - /etc/app/books.yml
+  - --ciphertext-file
+  - /etc/app/books.bin
+  - --impersonate-service-account
+  - books-executor@${PROJECT_ID}.iam.gserviceaccount.com
+- id: run
+  name: gcr.io/${PROJECT_ID}/app:production
+  dir: /usr/src/app
+  args:
+  - python
+  - -m
+  - qcmautomator.books

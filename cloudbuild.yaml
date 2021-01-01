@@ -1,18 +1,38 @@
-steps:
-- name: 'gcr.io/cloud-builders/gcloud'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    for d in */; do
-      config="${d}cloudbuild.yaml"
-      if [[ ! -f "${config}" ]]; then
-        continue
-      fi
+tags: ["build"]
 
-      echo "Building $d ... "
-      (
-        gcloud builds submit $d --config=${config}
-      ) &
-    done
-    wait
+steps:
+- id: make-dev
+  name: gcr.io/kaniko-project/executor
+  args:
+  - --destination=gcr.io/${PROJECT_ID}/app:development
+  - --cache=true
+  - --skip-unused-stages=true
+  - --target=development
+  - --use-new-run
+- id: make-prod
+  waitFor: ["-"]
+  name: gcr.io/kaniko-project/executor
+  args:
+  - --destination=gcr.io/${PROJECT_ID}/app:production
+  - --cache=true
+  - --skip-unused-stages=true
+  - --target=production
+  - --use-new-run
+- id: terraform-init
+  waitFor: ["make-dev"]
+  name: gcr.io/${PROJECT_ID}/app:development
+  dir: infra
+  args:
+  - terraform
+  - init
+  - "-backend-config=bucket=${PROJECT_ID}-deploy-state"
+  - "-backend-config=impersonate_service_account=deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+  - "-input=false"
+- id: terraform-apply
+  waitFor: ["terraform-init"]
+  name: gcr.io/${PROJECT_ID}/app:development
+  dir: infra
+  env:
+  - TF_VAR_deployer_account=deployer@${PROJECT_ID}.iam.gserviceaccount.com
+  - TF_VAR_gcp_project_id=${PROJECT_ID}
+  args: ["terraform", "apply", "-input=false", "-auto-approve"]
