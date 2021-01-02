@@ -1,11 +1,7 @@
-resource "google_bigquery_dataset" "books" {
-  dataset_id = "books"
-}
-
 resource "google_logging_project_sink" "books" {
   name                   = "books"
-  destination            = "bigquery.googleapis.com/projects/${var.gcp_project_id}/datasets/${google_bigquery_dataset.books.dataset_id}"
-  filter                 = "logName='projects/${var.gcp_project_id}/logs/books'"
+  destination            = "bigquery.googleapis.com/projects/${var.gcp_project_id}/datasets/${google_bigquery_dataset.events.dataset_id}"
+  filter                 = "logName=\"projects/${var.gcp_project_id}/logs/books\""
   unique_writer_identity = true
 
   bigquery_options {
@@ -13,10 +9,10 @@ resource "google_logging_project_sink" "books" {
   }
 }
 
-resource "google_bigquery_dataset_iam_binding" "books-sink" {
-  dataset_id = google_bigquery_dataset.books.dataset_id
+resource "google_bigquery_dataset_iam_member" "books-sink" {
+  dataset_id = google_bigquery_dataset.events.dataset_id
   role       = "roles/bigquery.dataEditor"
-  members    = [google_logging_project_sink.books.writer_identity]
+  member     = google_logging_project_sink.books.writer_identity
 }
 
 resource "google_service_account" "books-executor" {

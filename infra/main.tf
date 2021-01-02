@@ -16,10 +16,3 @@ provider "google" {
 data "google_project" "project" {
   project_id          = var.gcp_project_id
 }
-
-resource "google_logging_project_bucket_config" "extend-retention" {
-  project        = var.gcp_project_id
-  location       = "global"
-  retention_days = 3650
-  bucket_id      = "_Default"
-}

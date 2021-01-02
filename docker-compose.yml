@@ -10,3 +10,4 @@ services:
     volumes:
     - ".:/usr/src/app"
     - "~/.config/gcloud:/root/.config/gcloud"
+    - "./config:/etc/app:ro"

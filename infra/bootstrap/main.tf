@@ -119,3 +119,8 @@ resource "google_project_iam_binding" "deployer-storage" {
   role    = "roles/storage.admin"
   members = ["serviceAccount:${google_service_account.deployer.email}"]
 }
+
+resource "google_project_iam_member" "books-can-write-logs" {
+  role   = "roles/logging.logWriter"
+  member = "serviceAccount:books-executor@${var.gcp_project_id}.iam.gserviceaccount.com"
+}
