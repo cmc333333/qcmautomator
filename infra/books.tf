@@ -1,20 +1,3 @@
-resource "google_logging_project_sink" "books" {
-  name                   = "books"
-  destination            = "bigquery.googleapis.com/projects/${var.gcp_project_id}/datasets/${google_bigquery_dataset.events.dataset_id}"
-  filter                 = "logName=\"projects/${var.gcp_project_id}/logs/books\""
-  unique_writer_identity = true
-
-  bigquery_options {
-    use_partitioned_tables = true
-  }
-}
-
-resource "google_bigquery_dataset_iam_member" "books-sink" {
-  dataset_id = google_bigquery_dataset.events.dataset_id
-  role       = "roles/bigquery.dataEditor"
-  member     = google_logging_project_sink.books.writer_identity
-}
-
 resource "google_service_account" "books-executor" {
   account_id = "books-executor"
 }
@@ -71,4 +54,26 @@ resource "google_cloud_scheduler_job" "execute" {
       service_account_email = "deployer@${var.gcp_project_id}.iam.gserviceaccount.com"
     }
   }
+}
+
+resource "google_bigquery_dataset" "books_loading" {
+  dataset_id                  = "books_loading"
+  description                 = "Loading area for book data"
+  default_table_expiration_ms = 3600000 # one hour
+}
+
+resource "google_bigquery_dataset_iam_binding" "books_loading-writer" {
+  dataset_id = google_bigquery_dataset.books_loading.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  members    = ["serviceAccount:${google_service_account.books-executor.email}"]
+}
+
+resource "google_bigquery_dataset" "books" {
+  dataset_id = "books"
+}
+
+resource "google_bigquery_dataset_iam_binding" "books-writer" {
+  dataset_id = google_bigquery_dataset.books.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  members    = ["serviceAccount:${google_service_account.books-executor.email}"]
 }

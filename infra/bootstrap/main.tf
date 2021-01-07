@@ -40,7 +40,7 @@ resource "google_storage_bucket_iam_binding" "deploy-state" {
 resource "google_service_account_iam_binding" "deployer-token-creator" {
   service_account_id = google_service_account.deployer.name
   role               = "roles/iam.serviceAccountTokenCreator"
-  members            = [
+  members = [
     "serviceAccount:${google_project.project.number}@cloudbuild.gserviceaccount.com",
     # self
     "serviceAccount:${google_service_account.deployer.email}"
@@ -50,7 +50,7 @@ resource "google_service_account_iam_binding" "deployer-token-creator" {
 resource "google_service_account_iam_binding" "deployer-act-as" {
   service_account_id = google_service_account.deployer.name
   role               = "roles/iam.serviceAccountUser"
-  members            = [
+  members = [
     "serviceAccount:${google_project.project.number}@cloudbuild.gserviceaccount.com",
     # self
     "serviceAccount:${google_service_account.deployer.email}"
@@ -120,7 +120,7 @@ resource "google_project_iam_binding" "deployer-storage" {
   members = ["serviceAccount:${google_service_account.deployer.email}"]
 }
 
-resource "google_project_iam_member" "books-can-write-logs" {
-  role   = "roles/logging.logWriter"
+resource "google_project_iam_member" "books-can-run-jobs" {
+  role   = "roles/bigquery.jobUser"
   member = "serviceAccount:books-executor@${var.gcp_project_id}.iam.gserviceaccount.com"
 }

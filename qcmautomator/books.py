@@ -1,18 +1,19 @@
 import argparse
 import dataclasses
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import google.auth
 import pendulum
 import requests
 from defusedxml.ElementTree import fromstring as xml_from_str
 from google.auth import impersonated_credentials
-from google.cloud.logging_v2.client import Client
-from tqdm import tqdm
+from google.cloud.bigquery.client import Client
+from google.cloud.bigquery.job import LoadJobConfig
+from google.cloud.bigquery.table import TableReference
 
 from qcmautomator import config
 
-SCOPES = ("https://www.googleapis.com/auth/logging.write",)
+SCOPES = ("https://www.googleapis.com/auth/bigquery",)
 
 
 @dataclasses.dataclass
@@ -21,7 +22,7 @@ class Dates:
     created: pendulum.DateTime
     read: Optional[pendulum.DateTime]
 
-    def as_strs(self) -> Dict[str, Optional[str]]:
+    def simple_dict(self) -> Dict[str, Optional[str]]:
         return {
             "event": self.event.isoformat(),
             "created": self.created.isoformat(),
@@ -52,15 +53,27 @@ class Book:
     title: str
     user_shelves: List[str]
 
+    def simple_dict(self) -> Dict[str, Any]:
+        result = dataclasses.asdict(self)
+        result["dates"] = self.dates.simple_dict()
+        return result
 
-def logging_client(impersonate: Optional[str], project: Optional[str]) -> Client:
+
+FIELDS_STR = ", ".join(
+    f"{field.name}=src.{field.name}" for field in dataclasses.fields(Book)
+)
+
+
+def bq_client(impersonate: Optional[str], project: Optional[str]) -> Client:
     credentials, user_project = google.auth.default(scopes=SCOPES)
     project = project or user_project
     if impersonate:
         credentials = impersonated_credentials.Credentials(
             credentials, target_principal=impersonate, target_scopes=SCOPES
         )
-    return Client(credentials=credentials, project=project)
+    return Client(
+        credentials=credentials, project=project, client_options={"scopes": SCOPES}
+    )
 
 
 def get_books(goodreads_user_id: int) -> Iterator[Book]:
@@ -99,19 +112,31 @@ def get_books(goodreads_user_id: int) -> Iterator[Book]:
         )
 
 
+def load_data(client: Client) -> None:
+    now = int(pendulum.now().timestamp())
+    tmp_table = TableReference.from_string(
+        f"{client.project}.books_loading.as_of_{now}"
+    )
+    client.load_table_from_json(
+        [b.simple_dict() for b in get_books(config.goodreads_user_id())],
+        tmp_table,
+        job_config=LoadJobConfig(autodetect=True),
+    ).result()
+    client.query(
+        f"""
+        MERGE INTO `{client.project}.books.books` dst
+        USING `{client.project}.books_loading.{tmp_table.table_id}` src
+        ON src.guid = dst.guid
+        WHEN MATCHED THEN UPDATE
+        SET {FIELDS_STR}
+    """
+    ).result()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--impersonate-service-account", nargs="?")
     parser.add_argument("--project", nargs="?")
     args = parser.parse_args()
-    client = logging_client(args.impersonate_service_account, args.project)
-
-    with client.logger("books").batch() as logger:
-        for book in tqdm(get_books(config.goodreads_user_id())):
-            as_dict = dataclasses.asdict(book)
-            as_dict["dates"] = book.dates.as_strs()
-            logger.log_struct(
-                as_dict,
-                insert_id=book.guid,
-                timestamp=book.dates.event,
-            )
+    client = bq_client(args.impersonate_service_account, args.project)
+    load_data(client)

@@ -26,3 +26,7 @@ steps:
   - python
   - -m
   - qcmautomator.books
+  - --impersonate-service-account
+  - books-executor@${PROJECT_ID}.iam.gserviceaccount.com
+  - --project
+  - ${PROJECT_ID}

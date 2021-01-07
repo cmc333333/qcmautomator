@@ -3,11 +3,12 @@ ENTRYPOINT [] # unset entrypoint from Python image
 WORKDIR /usr/src/app
 ENV PYTHONUNBUFFERED=1
 RUN pip install pipenv==2020.11.15
-COPY ["Pipfile", "Pipfile.lock", "build-defs", "./"]
+COPY ["Pipfile", "Pipfile.lock", "./"]
 
 
 FROM base AS production
 RUN pipenv install --ignore-pipfile --system
+COPY ["build-defs", "./"]
 COPY ["qcmautomator/*.py", "./qcmautomator/"]
 
 

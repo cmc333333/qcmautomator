@@ -18,6 +18,7 @@ requests = "~=2.25.1"
 pendulum = "~=2.1.2"
 pyyaml = "~=5.3.1"
 tqdm = "~=4.55.0"
+google-cloud-bigquery = "~=2.6.1"
 
 [requires]
 python_version = "3.9"
