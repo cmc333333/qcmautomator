@@ -26,7 +26,7 @@ steps:
   - "-backend-config=bucket=${PROJECT_ID}-state"
   - "-input=false"
 - id: terraform-apply
-  waitFor: ["terraform-init"]
+  waitFor: ["terraform-init", "make-prod"]
   name: gcr.io/${PROJECT_ID}/app:development
   dir: infra/app
   env:
