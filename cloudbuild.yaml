@@ -1,5 +1,3 @@
-tags: ["build"]
-
 steps:
 - id: make-dev
   name: gcr.io/kaniko-project/executor
@@ -21,18 +19,27 @@ steps:
 - id: terraform-init
   waitFor: ["make-dev"]
   name: gcr.io/${PROJECT_ID}/app:development
-  dir: infra
+  dir: infra/app
   args:
   - terraform
   - init
-  - "-backend-config=bucket=${PROJECT_ID}-deploy-state"
-  - "-backend-config=impersonate_service_account=deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+  - "-backend-config=bucket=${PROJECT_ID}-state"
   - "-input=false"
 - id: terraform-apply
   waitFor: ["terraform-init"]
   name: gcr.io/${PROJECT_ID}/app:development
-  dir: infra
+  dir: infra/app
   env:
-  - TF_VAR_deployer_account=deployer@${PROJECT_ID}.iam.gserviceaccount.com
-  - TF_VAR_gcp_project_id=${PROJECT_ID}
+  - TF_VAR_deploy_gcp_project_id=${PROJECT_ID}
   args: ["terraform", "apply", "-input=false", "-auto-approve"]
+- id: cleanup
+  waitFor: ["make-dev", "make-prod"]
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  args:
+  - bash
+  - -c
+  - |
+    for digest in $$(gcloud container images list-tags gcr.io/${PROJECT_ID}/app --filter "NOT tags:*" --format="get(digest)")
+    do
+    gcloud container images delete gcr.io/${PROJECT_ID}/app@$${digest} --quiet
+    done
