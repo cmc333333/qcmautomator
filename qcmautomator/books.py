@@ -1,5 +1,6 @@
 import argparse
 import dataclasses
+import logging
 from typing import Any, Dict, Iterator, List, Optional
 
 import google.auth
@@ -129,11 +130,12 @@ def load_data(client: Client) -> None:
         ON src.guid = dst.guid
         WHEN MATCHED THEN UPDATE
         SET {FIELDS_STR}
-    """
+        """
     ).result()
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
     parser = argparse.ArgumentParser()
     parser.add_argument("--impersonate-service-account", nargs="?")
     parser.add_argument("--project", nargs="?")
