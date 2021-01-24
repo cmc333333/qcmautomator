@@ -67,3 +67,11 @@ resource "google_service_account_iam_binding" "deployer-acts-as-books-trigger" {
     "serviceAccount:${google_project_service_identity.deploy-build.email}"
   ]
 }
+
+resource "google_service_account_iam_binding" "deployer-acts-as-watching-trigger" {
+  service_account_id = google_service_account.watching-trigger.name
+  role               = "roles/iam.serviceAccountUser"
+  members = [
+    "serviceAccount:${google_project_service_identity.deploy-build.email}"
+  ]
+}

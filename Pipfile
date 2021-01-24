@@ -13,12 +13,12 @@ mypy = "==0.790"
 [packages]
 defusedxml = "~=0.6.0"
 google-auth = "~=1.24.0"
-google-cloud-logging = "~=2.0.2"
 requests = "~=2.25.1"
 pendulum = "~=2.1.2"
 pyyaml = "~=5.3.1"
 tqdm = "~=4.55.0"
 google-cloud-bigquery = "~=2.6.1"
+"trakt.py" = "~=4.2.0"
 
 [requires]
 python_version = "3.9"

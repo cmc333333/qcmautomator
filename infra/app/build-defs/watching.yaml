@@ -1,0 +1,37 @@
+tags: ["watching"]
+
+options:
+  volumes:
+  - name: secrets
+    path: /etc/app/
+
+steps:
+- id: get-secrets
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  args:
+  - gsutil
+  - --impersonate-service-account
+  - watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
+  - cp
+  - gs://${PROJECT_ID}-secrets/watching/*
+  - /etc/app/
+- id: run
+  name: gcr.io/${PROJECT_ID}/app
+  dir: /usr/src/app
+  args:
+  - python
+  - -m
+  - qcmautomator.watching
+  - --impersonate-service-account
+  - watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
+  - --project
+  - ${PROJECT_ID}
+- id: update-token
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  args:
+  - gsutil
+  - --impersonate-service-account
+  - watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
+  - cp
+  - /etc/app/trakt_refresh_token
+  - gs://${PROJECT_ID}-secrets/watching/trakt_refresh_token

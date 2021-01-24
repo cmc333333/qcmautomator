@@ -3,18 +3,15 @@ import dataclasses
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 
-import google.auth
 import pendulum
 import requests
 from defusedxml.ElementTree import fromstring as xml_from_str
-from google.auth import impersonated_credentials
 from google.cloud.bigquery.client import Client
 from google.cloud.bigquery.job import LoadJobConfig
 from google.cloud.bigquery.table import TableReference
 
 from qcmautomator import config
-
-SCOPES = ("https://www.googleapis.com/auth/bigquery",)
+from qcmautomator.bq_client import create_bq_client
 
 
 @dataclasses.dataclass
@@ -63,18 +60,6 @@ class Book:
 FIELDS_STR = ", ".join(
     f"{field.name}=src.{field.name}" for field in dataclasses.fields(Book)
 )
-
-
-def bq_client(impersonate: Optional[str], project: Optional[str]) -> Client:
-    credentials, user_project = google.auth.default(scopes=SCOPES)
-    project = project or user_project
-    if impersonate:
-        credentials = impersonated_credentials.Credentials(
-            credentials, target_principal=impersonate, target_scopes=SCOPES
-        )
-    return Client(
-        credentials=credentials, project=project, client_options={"scopes": SCOPES}
-    )
 
 
 def get_books(goodreads_user_id: int) -> Iterator[Book]:
@@ -140,5 +125,5 @@ if __name__ == "__main__":
     parser.add_argument("--impersonate-service-account", nargs="?")
     parser.add_argument("--project", nargs="?")
     args = parser.parse_args()
-    client = bq_client(args.impersonate_service_account, args.project)
+    client = create_bq_client(args.impersonate_service_account, args.project)
     load_data(client)
