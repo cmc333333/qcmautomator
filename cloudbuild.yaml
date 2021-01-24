@@ -1,8 +1,13 @@
+options:
+  dynamic_substitutions: true
+substitutions:
+  _DEV_IMAGE: gcr.io/${PROJECT_ID}/app
+  _PROD_IMAGE: gcr.io/${PROJECT_ID/-deploy/}/app
 steps:
 - id: make-dev
   name: gcr.io/kaniko-project/executor
   args:
-  - --destination=gcr.io/${PROJECT_ID}/app:development
+  - --destination=${_DEV_IMAGE}
   - --cache=true
   - --skip-unused-stages=true
   - --target=development
@@ -11,14 +16,14 @@ steps:
   waitFor: ["-"]
   name: gcr.io/kaniko-project/executor
   args:
-  - --destination=gcr.io/${PROJECT_ID}/app:production
+  - --destination=${_PROD_IMAGE}
   - --cache=true
   - --skip-unused-stages=true
   - --target=production
   - --use-new-run
 - id: terraform-init
   waitFor: ["make-dev"]
-  name: gcr.io/${PROJECT_ID}/app:development
+  name: ${_DEV_IMAGE}
   dir: infra/app
   args:
   - terraform
@@ -27,19 +32,30 @@ steps:
   - "-input=false"
 - id: terraform-apply
   waitFor: ["terraform-init", "make-prod"]
-  name: gcr.io/${PROJECT_ID}/app:development
+  name: ${_DEV_IMAGE}
   dir: infra/app
   env:
   - TF_VAR_deploy_gcp_project_id=${PROJECT_ID}
   args: ["terraform", "apply", "-input=false", "-auto-approve"]
-- id: cleanup
-  waitFor: ["make-dev", "make-prod"]
+- id: cleanup-dev
+  waitFor: ["make-dev"]
   name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
   args:
   - bash
   - -c
   - |
-    for digest in $$(gcloud container images list-tags gcr.io/${PROJECT_ID}/app --filter "NOT tags:*" --format="get(digest)")
+    for digest in $$(gcloud container images list-tags ${_DEV_IMAGE} --filter "NOT tags:*" --format="get(digest)")
     do
-    gcloud container images delete gcr.io/${PROJECT_ID}/app@$${digest} --quiet
+    gcloud container images delete ${_DEV_IMAGE}@$${digest} --quiet
+    done
+- id: cleanup-prod
+  waitFor: ["make-prod"]
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  args:
+  - bash
+  - -c
+  - |
+    for digest in $$(gcloud container images list-tags ${_PROD_IMAGE} --filter "NOT tags:*" --format="get(digest)")
+    do
+    gcloud container images delete ${_PROD_IMAGE}@$${digest} --quiet
     done

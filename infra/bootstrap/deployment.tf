@@ -65,3 +65,8 @@ resource "google_cloudbuild_trigger" "auto-deploy" {
     }
   }
 }
+
+resource "google_container_registry" "registry" {
+  project    = google_project.app.project_id
+  depends_on = [google_project_service.storage-app]
+}

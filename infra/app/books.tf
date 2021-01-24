@@ -41,7 +41,7 @@ resource "google_storage_bucket_iam_binding" "books-secrets-reader" {
   members = ["serviceAccount:${data.google_service_account.books-executor.email}"]
 }
 
-resource "google_cloud_scheduler_job" "execute" {
+resource "google_cloud_scheduler_job" "execute-books" {
   name      = "execute-books"
   schedule  = "30 * * * *"
   time_zone = "America/New_York"

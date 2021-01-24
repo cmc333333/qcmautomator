@@ -54,6 +54,12 @@ resource "google_project_iam_binding" "deployer-storage" {
   ]
 }
 
+resource "google_storage_bucket_iam_member" "deployer-publishes-images" {
+  bucket = google_container_registry.registry.id
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_project_service_identity.deploy-build.email}"
+}
+
 resource "google_service_account_iam_binding" "deployer-acts-as-books-trigger" {
   service_account_id = google_service_account.books-trigger.name
   role               = "roles/iam.serviceAccountUser"
