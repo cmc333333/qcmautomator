@@ -6,11 +6,13 @@ resource "google_project_iam_binding" "deployer-bigquery" {
   ]
 }
 
-resource "google_project_iam_binding" "deployer-build" {
+resource "google_project_iam_binding" "builders" {
   project = google_project.app.project_id
-  role    = "roles/cloudbuild.builds.builder"
+  role    = "roles/cloudbuild.builds.editor"
   members = [
-    "serviceAccount:${google_project_service_identity.deploy-build.email}"
+    "serviceAccount:${google_service_account.books-trigger.email}",
+    "serviceAccount:${google_project_service_identity.deploy-build.email}",
+    "serviceAccount:${google_service_account.watching-trigger.email}",
   ]
 }
 

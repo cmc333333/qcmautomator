@@ -9,9 +9,7 @@ data "google_service_account" "books-trigger" {
 resource "google_service_account_iam_binding" "books-executor-act-as" {
   service_account_id = data.google_service_account.books-executor.name
   role               = "roles/iam.serviceAccountUser"
-  members = [
-    "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com",
-  ]
+  members = ["serviceAccount:${data.google_service_account.books-trigger.email}"]
 }
 
 resource "google_storage_bucket_iam_member" "books-secrets-listing" {
@@ -79,4 +77,10 @@ resource "google_bigquery_dataset_iam_binding" "books-writer" {
   dataset_id = google_bigquery_dataset.books.dataset_id
   role       = "roles/bigquery.dataEditor"
   members    = ["serviceAccount:${data.google_service_account.books-executor.email}"]
+}
+
+resource "google_storage_bucket_iam_member" "books-reads-registry" {
+  bucket = "artifacts.${data.google_project.project.project_id}.appspot.com"
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${data.google_service_account.books-executor.email}"
 }

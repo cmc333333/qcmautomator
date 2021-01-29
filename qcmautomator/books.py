@@ -11,7 +11,7 @@ from google.cloud.bigquery.job import LoadJobConfig
 from google.cloud.bigquery.table import TableReference
 
 from qcmautomator import config
-from qcmautomator.bq_client import create_bq_client
+from qcmautomator.clients import create_bq_client
 
 
 @dataclasses.dataclass

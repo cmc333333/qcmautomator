@@ -1,5 +1,7 @@
 tags: ["watching"]
 
+logsBucket: gs://${PROJECT_ID}-build-logs
+serviceAccount: projects/${PROJECT_ID}/serviceAccounts/watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
 options:
   volumes:
   - name: secrets
@@ -10,8 +12,6 @@ steps:
   name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
   args:
   - gsutil
-  - --impersonate-service-account
-  - watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
   - cp
   - gs://${PROJECT_ID}-secrets/watching/*
   - /etc/app/
@@ -22,16 +22,12 @@ steps:
   - python
   - -m
   - qcmautomator.watching
-  - --impersonate-service-account
-  - watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
   - --project
   - ${PROJECT_ID}
 - id: update-token
   name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
   args:
   - gsutil
-  - --impersonate-service-account
-  - watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
   - cp
   - /etc/app/trakt_refresh_token
   - gs://${PROJECT_ID}-secrets/watching/trakt_refresh_token

@@ -9,9 +9,7 @@ data "google_service_account" "watching-trigger" {
 resource "google_service_account_iam_binding" "watching-executor-act-as" {
   service_account_id = data.google_service_account.watching-executor.name
   role               = "roles/iam.serviceAccountUser"
-  members            = [
-    "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com",
-  ]
+  members            = ["serviceAccount:${data.google_service_account.watching-trigger.email}"]
 }
 
 resource "google_storage_bucket_iam_member" "watching-secrets-listing" {

@@ -1,5 +1,7 @@
 tags: ["books"]
 
+logsBucket: gs://${PROJECT_ID}-build-logs
+serviceAccount: projects/${PROJECT_ID}/serviceAccounts/books-executor@${PROJECT_ID}.iam.gserviceaccount.com
 options:
   volumes:
   - name: secrets
@@ -10,8 +12,6 @@ steps:
   name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
   args:
   - gsutil
-  - --impersonate-service-account
-  - books-executor@${PROJECT_ID}.iam.gserviceaccount.com
   - cp
   - gs://${PROJECT_ID}-secrets/books/goodreads_user_id
   - /etc/app/goodreads_user_id
@@ -22,7 +22,5 @@ steps:
   - python
   - -m
   - qcmautomator.books
-  - --impersonate-service-account
-  - books-executor@${PROJECT_ID}.iam.gserviceaccount.com
   - --project
   - ${PROJECT_ID}

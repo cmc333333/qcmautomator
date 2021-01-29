@@ -8,6 +8,11 @@ resource "google_project_service" "build-app" {
   service = "cloudbuild.googleapis.com"
 }
 
+resource "google_project_service" "iam-app" {
+  project = google_project.app.project_id
+  service = "iam.googleapis.com"
+}
+
 resource "google_project_service" "kms-app" {
   project = google_project.app.project_id
   service = "cloudkms.googleapis.com"
