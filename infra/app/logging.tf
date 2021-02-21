@@ -8,6 +8,7 @@ resource "google_storage_bucket_iam_binding" "logs-writer" {
   role    = "roles/storage.admin"
   members = [
     "serviceAccount:${data.google_service_account.books-executor.email}",
+    "serviceAccount:${data.google_service_account.podcasts-executor.email}",
     "serviceAccount:${data.google_service_account.watching-executor.email}",
   ]
 }

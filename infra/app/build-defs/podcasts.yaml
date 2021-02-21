@@ -1,0 +1,17 @@
+tags: ["podcasts"]
+
+logsBucket: gs://${PROJECT_ID}-build-logs
+serviceAccount: projects/${PROJECT_ID}/serviceAccounts/podcasts-executor@${PROJECT_ID}.iam.gserviceaccount.com
+options:
+  volumes:
+  - name: secrets
+    path: /etc/app/
+
+steps:
+- id: get-secrets
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  args:
+  - gsutil
+  - cp
+  - gs://${PROJECT_ID}-secrets/podcasts/*
+  - /etc/app/
