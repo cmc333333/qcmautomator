@@ -15,3 +15,11 @@ steps:
   - cp
   - gs://${PROJECT_ID}-secrets/podcasts/*
   - /etc/app/
+- id: run
+  name: gcr.io/${PROJECT_ID}/app
+  dir: /usr/src/app
+  args:
+  - python
+  - -m
+  - qcmautomator.podcasts
+  - --project=${PROJECT_ID}
