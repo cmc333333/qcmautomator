@@ -30,7 +30,7 @@ resource "google_storage_bucket_iam_member" "podcasts-secrets" {
 
 resource "google_cloud_scheduler_job" "execute-podcasts" {
   name      = "execute-podcasts"
-  schedule  = "10 * * * *"
+  schedule  = "10 */3 * * *"
   time_zone = "America/New_York"
 
   http_target {

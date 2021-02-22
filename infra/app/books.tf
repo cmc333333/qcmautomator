@@ -41,7 +41,7 @@ resource "google_storage_bucket_iam_binding" "books-secrets-reader" {
 
 resource "google_cloud_scheduler_job" "execute-books" {
   name      = "execute-books"
-  schedule  = "30 * * * *"
+  schedule  = "30 0 * * *"
   time_zone = "America/New_York"
 
   http_target {

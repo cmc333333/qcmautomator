@@ -51,7 +51,7 @@ resource "google_storage_bucket_iam_binding" "watching-secrets-reader" {
 
 resource "google_cloud_scheduler_job" "execute-viewing" {
   name      = "execute-watching"
-  schedule  = "40 * * * *"
+  schedule  = "40 0 * * *"
   time_zone = "America/New_York"
 
   http_target {
