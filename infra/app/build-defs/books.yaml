@@ -3,6 +3,7 @@ tags: ["books"]
 logsBucket: gs://${PROJECT_ID}-build-logs
 serviceAccount: projects/${PROJECT_ID}/serviceAccounts/books-executor@${PROJECT_ID}.iam.gserviceaccount.com
 options:
+  logging: GCS_ONLY
   volumes:
   - name: secrets
     path: /etc/app/
@@ -20,6 +21,6 @@ steps:
   dir: /usr/src/app
   args:
   - python
-  - -m
-  - qcmautomator.books
-  - --project=${PROJECT_ID}
+  - run.py
+  - books
+  - load-data

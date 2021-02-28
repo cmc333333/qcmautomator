@@ -3,6 +3,7 @@ tags: ["watching"]
 logsBucket: gs://${PROJECT_ID}-build-logs
 serviceAccount: projects/${PROJECT_ID}/serviceAccounts/watching-executor@${PROJECT_ID}.iam.gserviceaccount.com
 options:
+  logging: GCS_ONLY
   volumes:
   - name: secrets
     path: /etc/app/
@@ -15,15 +16,22 @@ steps:
   - cp
   - gs://${PROJECT_ID}-secrets/watching/*
   - /etc/app/
-- id: run
+- id: run-episodes
   name: gcr.io/${PROJECT_ID}/app
   dir: /usr/src/app
   args:
   - python
-  - -m
-  - qcmautomator.watching
-  - --project
-  - ${PROJECT_ID}
+  - run.py
+  - watching
+  - load-episodes
+- id: run-movies
+  name: gcr.io/${PROJECT_ID}/app
+  dir: /usr/src/app
+  args:
+  - python
+  - run.py
+  - watching
+  - load-movies
 - id: update-token
   name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
   args:

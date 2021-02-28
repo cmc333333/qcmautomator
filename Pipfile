@@ -21,6 +21,7 @@ google-cloud-bigquery = "~=2.6.1"
 "trakt.py" = "~=4.2.0"
 mygpoclient = "~=1.8"
 feedparser = "~=6.0.2"
+typer = "~=0.3.2"
 
 [requires]
 python_version = "3.9"

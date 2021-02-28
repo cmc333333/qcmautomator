@@ -1,8 +1,7 @@
-import argparse
 import logging
 from typing import Iterator
 
-from google.cloud.bigquery.client import Client as BQClient
+import typer
 from google.cloud.bigquery.job import LoadJobConfig
 from google.cloud.bigquery.table import TableReference
 from mygpoclient.api import EpisodeAction, MygPodderClient
@@ -21,7 +20,8 @@ def get_podcasts(since: int) -> Iterator[EpisodeAction]:
     yield from response.actions
 
 
-def load_data(bq_client: BQClient) -> None:
+def load_actions(project: str = None, impersonate_service_account: str = None) -> None:
+    bq_client = create_bq_client(impersonate_service_account, project)
     table = TableReference.from_string(f"{bq_client.project}.podcasts.episode_actions")
     start_at = list(
         bq_client.query(
@@ -43,11 +43,5 @@ def load_data(bq_client: BQClient) -> None:
         logger.info("No new actions")
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--impersonate-service-account", nargs="?")
-    parser.add_argument("--project", nargs="?")
-    args = parser.parse_args()
-    bq_client = create_bq_client(args.impersonate_service_account, args.project)
-    load_data(bq_client)
+cli = typer.Typer()
+cli.command()(load_actions)

@@ -1,20 +1,19 @@
-import argparse
 import logging
 from typing import Any, Callable, Dict, Iterable
 
 import pendulum
-from trakt.client import TraktClient
-from google.cloud.bigquery.client import Client as BQClient
+import typer
 from google.cloud.bigquery.job import CopyJobConfig, LoadJobConfig
 from google.cloud.bigquery.table import TableReference
 
 from qcmautomator.clients import create_bq_client, create_trakt_client
 
 DataRows = Iterable[Dict[str, Any]]
+logger = logging.getLogger(__name__)
 
 
-def fetch_episodes(trakt_client: TraktClient) -> DataRows:
-    results = trakt_client["users/*/history"].episodes(
+def fetch_episodes() -> DataRows:
+    results = create_trakt_client()["users/*/history"].episodes(
         "me", extended="full", pagination=True, per_page=1000
     )
     for episode in results:
@@ -27,8 +26,8 @@ def fetch_episodes(trakt_client: TraktClient) -> DataRows:
         yield as_dict
 
 
-def fetch_movies(trakt_client: TraktClient) -> DataRows:
-    results = trakt_client["users/*/history"].movies(
+def fetch_movies() -> DataRows:
+    results = create_trakt_client()["users/*/history"].movies(
         "me", extended="full", pagination=True, per_page=1000
     )
     for movie in results:
@@ -38,10 +37,12 @@ def fetch_movies(trakt_client: TraktClient) -> DataRows:
 
 
 def load_data(
-    bq_client: BQClient,
     video_type: str,
     data_fn: Callable[[], DataRows],
+    project: str = None,
+    impersonate_service_account: str = None,
 ) -> None:
+    bq_client = create_bq_client(impersonate_service_account, project)
     now = int(pendulum.now().timestamp())
     perm_table = TableReference.from_string(
         f"{bq_client.project}.watching.{video_type}"
@@ -49,8 +50,10 @@ def load_data(
     tmp_table = TableReference.from_string(
         f"{bq_client.project}.watching_loading.{video_type}_{now}"
     )
+    rows = list(data_fn())
+    logger.info(f"Loading {len(rows)} {video_type}s")
     bq_client.load_table_from_json(
-        list(data_fn()), tmp_table, job_config=LoadJobConfig(autodetect=True)
+        rows, tmp_table, job_config=LoadJobConfig(autodetect=True)
     ).result()
     bq_client.copy_table(
         tmp_table,
@@ -59,14 +62,14 @@ def load_data(
     ).result()
 
 
-if __name__ == "__main__":
-    logging.basicConfig()
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--impersonate-service-account", nargs="?")
-    parser.add_argument("--project", nargs="?")
-    args = parser.parse_args()
+def load_episodes(project: str = None, impersonate_service_account: str = None) -> None:
+    return load_data("episodes", fetch_episodes, project, impersonate_service_account)
 
-    bq_client = create_bq_client(args.impersonate_service_account, args.project)
-    trakt_client = create_trakt_client()
-    load_data(bq_client, "episodes", lambda: fetch_episodes(trakt_client))
-    load_data(bq_client, "movies", lambda: fetch_movies(trakt_client))
+
+def load_movies(project: str = None, impersonate_service_account: str = None) -> None:
+    return load_data("movies", fetch_movies, project, impersonate_service_account)
+
+
+cli = typer.Typer()
+cli.command()(load_episodes)
+cli.command()(load_movies)

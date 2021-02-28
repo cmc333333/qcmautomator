@@ -1,17 +1,18 @@
-import argparse
 import dataclasses
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 
 import pendulum
 import requests
+import typer
 from defusedxml.ElementTree import fromstring as xml_from_str
-from google.cloud.bigquery.client import Client
 from google.cloud.bigquery.job import LoadJobConfig
 from google.cloud.bigquery.table import TableReference
 
 from qcmautomator import config
 from qcmautomator.clients import create_bq_client
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -98,16 +99,20 @@ def get_books(goodreads_user_id: int) -> Iterator[Book]:
         )
 
 
-def load_data(client: Client) -> None:
+def load_data(project: str = None, impersonate_service_account: str = None) -> None:
+    client = create_bq_client(impersonate_service_account, project)
     now = int(pendulum.now().timestamp())
     tmp_table = TableReference.from_string(
         f"{client.project}.books_loading.as_of_{now}"
     )
+    rows = [b.simple_dict() for b in get_books(config.goodreads_user_id())]
+    logger.info(f"Writing {len(rows)} books")
     client.load_table_from_json(
-        [b.simple_dict() for b in get_books(config.goodreads_user_id())],
+        rows,
         tmp_table,
         job_config=LoadJobConfig(autodetect=True),
     ).result()
+    logger.info("Merging books")
     client.query(
         f"""
         MERGE INTO `{client.project}.books.books` dst
@@ -119,11 +124,5 @@ def load_data(client: Client) -> None:
     ).result()
 
 
-if __name__ == "__main__":
-    logging.basicConfig()
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--impersonate-service-account", nargs="?")
-    parser.add_argument("--project", nargs="?")
-    args = parser.parse_args()
-    client = create_bq_client(args.impersonate_service_account, args.project)
-    load_data(client)
+cli = typer.Typer()
+cli.command()(load_data)
