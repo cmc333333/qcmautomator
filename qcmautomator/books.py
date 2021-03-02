@@ -58,11 +58,6 @@ class Book:
         return result
 
 
-FIELDS_STR = ", ".join(
-    f"{field.name}=src.{field.name}" for field in dataclasses.fields(Book)
-)
-
-
 def get_books(goodreads_user_id: int) -> Iterator[Book]:
     url = f"https://www.goodreads.com/review/list_rss/{goodreads_user_id}"
     result = requests.get(url)
@@ -119,7 +114,10 @@ def load_data(project: str = None, impersonate_service_account: str = None) -> N
         USING `{client.project}.books_loading.{tmp_table.table_id}` src
         ON src.guid = dst.guid
         WHEN MATCHED THEN UPDATE
-        SET {FIELDS_STR}
+          SET {', '.join(f'{f.name}=src.{f.name}' for f in dataclasses.fields(Book))}
+        WHEN NOT MATCHED
+          THEN INSERT({', '.join(f.name for f in dataclasses.fields(Book))})
+          VALUES({', '.join(f'src.{f.name}' for f in dataclasses.fields(Book))})
         """
     ).result()
 
