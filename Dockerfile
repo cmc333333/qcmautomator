@@ -9,6 +9,7 @@ COPY ["Pipfile", "Pipfile.lock", "./"]
 FROM base AS production
 RUN pipenv install --ignore-pipfile --system
 COPY ["qcmautomator/*.py", "./qcmautomator/"]
+COPY ["*.py", "."]
 
 
 FROM base AS development
