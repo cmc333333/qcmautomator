@@ -1,14 +1,21 @@
 main:
   params: [args]
   steps:
-  - init:
+  - init_after_date:
+      switch:
+      - condition: ${"after_date" in args}
+        assign:
+        - after_date: ${args.after_date}
+      - condition: true
+        call: fetch_latest_date
+        result: after_date
+  - init_paging:
       assign:
-      - after_date: ${args.after_date}
       - url: https://api.fitbit.com/1.2/user/-/sleep/list.json
       - query:
           afterDate: ${after_date}
           sort: asc
-          limit: 100
+          limit: 50
           offset: 0
       - num_records: 0
   - refresh_auth:
@@ -70,3 +77,18 @@ get_access_token:
         body: ${text.encode(http_result.body.refresh_token)}
   - return:
       return: ${http_result.body.access_token}
+
+fetch_latest_date:
+  steps:
+  - fetch_max_from_db:
+      call: googleapis.bigquery.v2.jobs.query
+      args:
+        projectId: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+        body:
+          useLegacySql: false
+          query: |-
+            SELECT MAX(dateofsleep)
+            FROM fitbit.sleep
+      result: result
+  - return:
+      return: ${if(result.rows[0].f[0].v == null, "2000-01-01", result.rows[0].f[0].v)}
