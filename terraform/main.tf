@@ -10,8 +10,12 @@ terraform {
   }
 }
 
+locals {
+  region = "us-west1"
+}
+
 provider "google" {
   project                     = "qcmautomator"
   impersonate_service_account = "deployer@qcmautomator.iam.gserviceaccount.com"
-  region                      = "us-west1"
+  region                      = local.region
 }

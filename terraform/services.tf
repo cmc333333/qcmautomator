@@ -1,3 +1,11 @@
+resource "google_project_service" "bigquery" {
+  service = "bigquery.googleapis.com"
+}
+
+resource "google_project_service" "cloudscheduler" {
+  service = "cloudscheduler.googleapis.com"
+}
+
 resource "google_project_service" "logging" {
   service = "logging.googleapis.com"
 }
