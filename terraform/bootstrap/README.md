@@ -1,0 +1,2 @@
+# Bootstrap Terraform
+This minimal terraform stack is used to bootstrap the project and service account which are then used to run the normal terraform process. While it's usually bad practice to commit the state file, in this case, the state file should almost never change.

@@ -1,0 +1,94 @@
+main:
+  params: [args]
+  steps:
+  - init_after_date:
+      switch:
+      - condition: ${"after_date" in args}
+        assign:
+        - after_date: ${args.after_date}
+      - condition: true
+        call: fetch_latest_date
+        result: after_date
+  - init_paging:
+      assign:
+      - url: https://api.fitbit.com/1.2/user/-/sleep/list.json
+      - query:
+          afterDate: ${after_date}
+          sort: asc
+          limit: 50
+          offset: 0
+      - num_records: 0
+  - refresh_auth:
+      call: get_access_token
+      result: access_token
+  - fetch_one_page:
+      call: http.get
+      args:
+        url: ${url}
+        query: ${query}
+        headers:
+          Authorization: ${"Bearer " + access_token}
+      result: http_result
+  - update_record_count:
+      assign:
+      - num_records: ${num_records + len(http_result.body.sleep)}
+  - log_results:
+      call: sys.log
+      args:
+        json:
+          fitbit_sleep_v1: ${http_result.body.sleep}
+  - loop_if_not_done:
+      switch:
+      - condition: ${default(map.get(http_result.body.pagination, "next"), "") != ""}
+        assign:
+        - url: ${http_result.body.pagination.next}
+        - query: null
+        next: fetch_one_page
+  - return:
+      return:
+        message: ${"Processed " + num_records + " records"}
+
+get_access_token:
+  steps:
+  - fetch_refresh_token:
+      call: googleapis.storage.v1.objects.get
+      args:
+        bucket: ${sys.get_env("REFRESH_TOKEN_BUCKET")}
+        object: token
+        alt: media
+      result: blob
+  - refresh_tokens:
+      call: http.post
+      args:
+        url: https://api.fitbit.com/oauth2/token
+        headers:
+          "Content-Type": application/x-www-form-urlencoded
+        body:
+          client_id: ${sys.get_env("CLIENT_ID")}
+          grant_type: refresh_token
+          refresh_token: ${text.decode(blob)}
+      result: http_result
+  - update_refresh_token:
+      call: googleapis.storage.v1.objects.insert
+      args:
+        bucket: ${sys.get_env("REFRESH_TOKEN_BUCKET")}
+        uploadType: media
+        name: token
+        body: ${text.encode(http_result.body.refresh_token)}
+  - return:
+      return: ${http_result.body.access_token}
+
+fetch_latest_date:
+  steps:
+  - fetch_max_from_db:
+      call: googleapis.bigquery.v2.jobs.query
+      args:
+        projectId: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+        body:
+          useLegacySql: false
+          query: |-
+            SELECT MAX(dateofsleep)
+            FROM fitbit.sleep
+      result: result
+  - return:
+      return: ${if(result.rows[0].f[0].v == null, "2000-01-01", result.rows[0].f[0].v)}
