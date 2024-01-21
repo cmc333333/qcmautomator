@@ -1,0 +1,13 @@
+{
+    "customizations": {
+      "codespaces": {
+        "repositories": {
+          "cmc333333/qcmautomator": {
+            "permissions": {
+              "actions": "write"
+            }
+          }
+        }
+      }
+    }
+  }
