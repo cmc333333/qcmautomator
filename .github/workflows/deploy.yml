@@ -1,8 +1,8 @@
 name: Depoly
 on:
-- workflow_dispatch
+  - workflow_dispatch
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Ran"
+      - run: echo "Ran ${{github}}"
