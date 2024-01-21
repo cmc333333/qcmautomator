@@ -4,3 +4,4 @@ creds.json
 .terraform
 *.backup
 config/
+node_modules/
