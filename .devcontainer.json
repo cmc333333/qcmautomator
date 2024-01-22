@@ -1,8 +1,12 @@
 {
+  "build": {
+    "dockerfile": "dev.Dockerfile"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
         "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
         "redhat.vscode-yaml"
       ]
     }
