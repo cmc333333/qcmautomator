@@ -6,9 +6,15 @@
     "vscode": {
       "extensions": [
         "esbenp.prettier-vscode",
+        "hashicorp.terraform",
         "ms-azuretools.vscode-docker",
         "redhat.vscode-yaml"
-      ]
+      ],
+      "settings": {
+        "[yaml]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
+      }
     }
   }
 }
