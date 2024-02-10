@@ -1,8 +1,6 @@
 terraform {
   backend "gcs" {
     bucket                      = "qcmautomator-deployment-state"
-    impersonate_service_account = "deployer@qcmautomator.iam.gserviceaccount.com"
-    prefix                      = "bootstrap"
   }
 
   required_providers {
@@ -16,7 +14,6 @@ locals {
 }
 
 provider "google" {
-  project                     = local.project
-  impersonate_service_account = "deployer@qcmautomator.iam.gserviceaccount.com"
+  project = local.project
   region                      = local.region
 }
