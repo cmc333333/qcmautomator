@@ -89,21 +89,3 @@ resource "google_bigquery_dataset_access" "raw_data_fitbit" {
     }
   }
 }
-
-resource "google_cloud_scheduler_job" "fitbit_sleep" {
-  project     = google_project_service.cloudscheduler.project
-  name        = "fitbit-sleep"
-  description = "Trigger fetching sleep data from FitBit"
-  schedule    = "5 1 * * *"
-  time_zone   = "America/New_York"
-
-  http_target {
-    http_method = "POST"
-    uri         = "https://workflowexecutions.googleapis.com/v1/${google_workflows_workflow.fitbit_sleep.id}/executions"
-    body        = base64encode(jsonencode({ argument = "{}" }))
-
-    oauth_token {
-      service_account_email = google_service_account.scheduler.email
-    }
-  }
-}
