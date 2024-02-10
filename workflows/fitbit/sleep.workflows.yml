@@ -3,6 +3,9 @@ main:
   steps:
   - init_after_date:
       switch:
+      - condition: ${get_type(args) != "map"}
+        call: fetch_latest_date
+        result: after_date
       - condition: ${"after_date" in args}
         assign:
         - after_date: ${args.after_date}

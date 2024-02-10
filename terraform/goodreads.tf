@@ -22,22 +22,6 @@ resource "google_project_iam_binding" "goodreads" {
   members = [google_service_account.goodreads.member]
 }
 
-resource "google_workflows_workflow" "goodreads" {
-  project         = google_project_service.workflows.project
-  name            = "goodreads"
-  service_account = google_service_account.goodreads.email
-  # The workflow's very simple, so embed it rather than referencing a yaml file
-  source_contents = <<-EOT
-    main:
-      steps:
-      - run:
-          call: googleapis.run.v2.projects.locations.jobs.run
-          args:
-            name: ${google_cloud_run_v2_job.fetch_goodreads.id}
-            body: {}
-  EOT
-}
-
 resource "google_storage_bucket" "goodreads_scripts" {
   name                        = "${google_project_service.storage.project}-goodreads-scripts"
   location                    = "US"
@@ -158,5 +142,5 @@ resource "google_cloud_run_v2_job_iam_binding" "fetch_goodreads_invokers" {
   name     = google_cloud_run_v2_job.fetch_goodreads.name
   location = google_cloud_run_v2_job.fetch_goodreads.location
   role     = "roles/run.invoker"
-  members  = [google_service_account.goodreads.member]
+  members  = [google_service_account.scheduler.member]
 }
