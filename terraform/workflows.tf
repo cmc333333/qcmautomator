@@ -8,6 +8,13 @@ resource "google_project_iam_member" "scheduler_triggers_workflows" {
   member  = google_service_account.scheduler.member
 }
 
+# Allow the scheduler to see jobs it kicked off
+resource "google_project_iam_member" "scheduler_sees_cloud_run" {
+  project = google_project_service.cloudscheduler.project
+  role    = "roles/run.viewer"
+  member  = google_service_account.scheduler.member
+}
+
 resource "google_workflows_workflow" "hourly" {
   project         = google_project_service.workflows.project
   name            = "hourly"
@@ -16,6 +23,7 @@ resource "google_workflows_workflow" "hourly" {
 
   user_env_vars = {
     FITBIT_SLEEP_WORKFLOW_ID = google_workflows_workflow.fitbit_sleep.name
+    GOODREADS_CLOUD_RUN_ID   = google_cloud_run_v2_job.fetch_goodreads.id
   }
 }
 
