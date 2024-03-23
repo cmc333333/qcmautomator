@@ -22,8 +22,9 @@ resource "google_workflows_workflow" "hourly" {
   source_contents = file("../workflows/hourly.workflows.yml")
 
   user_env_vars = {
-    FITBIT_SLEEP_WORKFLOW_ID = google_workflows_workflow.fitbit_sleep.name
-    GOODREADS_CLOUD_RUN_ID   = google_cloud_run_v2_job.fetch_goodreads.id
+    FITBIT_SLEEP_WORKFLOW_ID  = google_workflows_workflow.fitbit_sleep.name
+    GITHUB_EVENTS_WORKFLOW_ID = google_workflows_workflow.github_events.name
+    GOODREADS_CLOUD_RUN_ID    = google_cloud_run_v2_job.fetch_goodreads.id
   }
 }
 
