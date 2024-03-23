@@ -7,10 +7,17 @@ resource "google_logging_project_sink" "raw_data" {
   destination            = "bigquery.googleapis.com/${google_bigquery_dataset.raw_data.id}"
   unique_writer_identity = true
   filter                 = <<-EOT
-    logName="projects/qcmautomator/logs/Workflows"
-    resource.type="workflows.googleapis.com/Workflow"
-    resource.labels.workflow_id="${google_workflows_workflow.fitbit_sleep.name}"
-    jsonPayload.fitbit_sleep_v1:*
+    (
+      logName="projects/qcmautomator/logs/Workflows"
+      resource.type="workflows.googleapis.com/Workflow"
+      resource.labels.workflow_id="${google_workflows_workflow.fitbit_sleep.name}"
+      jsonPayload.fitbit_sleep_v1:*
+    ) OR (
+      logName="projects/qcmautomator/logs/Workflows"
+      resource.type="workflows.googleapis.com/Workflow"
+      resource.labels.workflow_id="${google_workflows_workflow.github_events.name}"
+      jsonPayload.github_event_v1:*
+    )
   EOT
   bigquery_options {
     use_partitioned_tables = true

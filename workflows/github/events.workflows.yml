@@ -1,0 +1,59 @@
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - path_or_url: "/users/cmc333333/events?per_page=10"
+    - fetch_one_page:
+        call: github_api
+        args:
+          path_or_url: ${path_or_url}
+        result: result
+    - log_results:
+        for:
+          value: event
+          in: ${result.body}
+          steps:
+            - log_event:
+                call: sys.log
+                args:
+                  json:
+                    github_event_v1: ${event}
+    - check_if_done:
+        switch:
+          - condition: ${parse_next_link(result.headers.Link) != ""}
+            assign:
+              - path_or_url: ${parse_next_link(result.headers.Link)}
+            next: fetch_one_page
+
+github_api:
+  params: [path_or_url, body: null, query: null, method: GET]
+  steps:
+    - init:
+        assign:
+          - url: ${if(text.substring(path_or_url, 0, 1) == "/", "https://api.github.com" + path_or_url, path_or_url)}
+    - hit:
+        call: http.request
+        args:
+          body: ${body}
+          headers:
+            Authorization: ${"Bearer " + googleapis.secretmanager.v1.projects.secrets.versions.accessString("github_token")}
+          method: ${method}
+          query: ${query}
+          url: ${url}
+        result: result
+    - return:
+        return: ${result}
+
+parse_next_link:
+  params: [next_header]
+  steps:
+    - find_matches:
+        assign:
+          - matches: ${text.find_all_regex(next_header, "<[^>]+>; rel=\"next\"")}
+    - branch:
+        switch:
+          - condition: ${len(matches) > 0}
+            return: ${text.replace_all_regex(matches[0].match, "^.*<|>.*$", "")}
+          - condition: true
+            return: ""
