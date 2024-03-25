@@ -4,6 +4,9 @@ main:
     - init:
         assign:
           - path_or_url: "/users/cmc333333/events?per_page=10"
+    - fetch_high_water_mark:
+        call: fetch_high_water_mark
+        result: high_water_mark
     - fetch_one_page:
         call: github_api
         args:
@@ -14,6 +17,12 @@ main:
           value: event
           in: ${result.body}
           steps:
+            - check_if_past_high_water_mark:
+                switch:
+                  - condition: ${int(event.id) <= high_water_mark}
+                    assign:
+                      - result.headers.Link: ""
+                    next: break
             - log_event:
                 call: sys.log
                 args:
@@ -25,6 +34,20 @@ main:
             assign:
               - path_or_url: ${parse_next_link(result.headers.Link)}
             next: fetch_one_page
+
+fetch_high_water_mark:
+  steps:
+    - run_query:
+        call: googleapis.bigquery.v2.jobs.query
+        args:
+          projectId: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          body:
+            query: |
+              SELECT id FROM `github.latest_id`
+            useLegacySql: false
+        result: query_result
+    - return:
+        return: ${int(default(query_result.rows[0].f[0].v, "0"))}
 
 github_api:
   params: [path_or_url, body: null, query: null, method: GET]
