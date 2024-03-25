@@ -81,34 +81,47 @@ parse_next_link:
           - condition: true
             return: ""
 
-normalize_event:
-  params: [event]
+normalize_reactions:
+  params: [reactions]
   steps:
-    - check_no_comment:
-        switch:
-          - condition: ${map.get(event, ["payload", "comment", "reactions"]) == null}
-            return: ${event}
-    - setup_reactions:
+    - init:
         assign:
-          - reactions: {}
-    - populate_reactions:
+          - result: {}
+    - populate:
         for:
           value: key
-          in: ${keys(event.payload.comment.reactions)}
+          in: ${keys(reactions)}
           steps:
-            - check:
+            - field_name_logic:
                 switch:
                   - condition: ${key == "+1"}
                     assign:
-                      - reactions.plus_1: ${event.payload.comment.reactions[key]}
+                      - result.plus_1: ${reactions[key]}
                   - condition: ${key == "-1"}
                     assign:
-                      - reactions.minus_1: ${event.payload.comment.reactions[key]}
+                      - result.minus_1: ${reactions[key]}
                   - condition: true
                     assign:
-                      - reactions[key]: ${event.payload.comment.reactions[key]}
-    - update:
-        assign:
-          - event.payload.comment.reactions: ${reactions}
+                      - result[key]: ${reactions[key]}
+    - return:
+        return: ${result}
+
+normalize_event:
+  params: [event]
+  steps:
+    - check_comment:
+        switch:
+          - condition: ${map.get(event, ["payload", "comment", "reactions"]) != null}
+            steps:
+              - replace_comment:
+                  assign:
+                    - event.payload.comment.reactions: ${normalize_reactions(event.payload.comment.reactions)}
+    - check_issue:
+        switch:
+          - condition: ${map.get(event, ["payload", "issue", "reactions"]) != null}
+            steps:
+              - replace_issue:
+                  assign:
+                    - event.payload.issue.reactions: ${normalize_reactions(event.payload.issue.reactions)}
     - return:
         return: ${event}
