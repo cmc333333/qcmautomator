@@ -18,7 +18,7 @@ main:
                 call: sys.log
                 args:
                   json:
-                    github_event_v1: ${event}
+                    github_event_v1: ${normalize_event(event)}
     - check_if_done:
         switch:
           - condition: ${parse_next_link(result.headers.Link) != ""}
@@ -57,3 +57,35 @@ parse_next_link:
             return: ${text.replace_all_regex(matches[0].match, "^.*<|>.*$", "")}
           - condition: true
             return: ""
+
+normalize_event:
+  params: [event]
+  steps:
+    - check_no_comment:
+        switch:
+          - condition: ${map.get(event, ["payload", "comment", "reactions"]) == null}
+            return: ${event}
+    - setup_reactions:
+        assign:
+          - reactions: {}
+    - populate_reactions:
+        for:
+          value: key
+          in: ${keys(event.payload.comment.reactions)}
+          steps:
+            - check:
+                switch:
+                  - condition: ${key == "+1"}
+                    assign:
+                      - reactions.plus_1: ${event.payload.comment.reactions[key]}
+                  - condition: ${key == "-1"}
+                    assign:
+                      - reactions.minus_1: ${event.payload.comment.reactions[key]}
+                  - condition: true
+                    assign:
+                      - reactions[key]: ${event.payload.comment.reactions[key]}
+    - update:
+        assign:
+          - event.payload.comment.reactions: ${reactions}
+    - return:
+        return: ${event}
